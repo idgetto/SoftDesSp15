@@ -15,11 +15,7 @@ import re
 ### YOU WILL START YOUR IMPLEMENTATION FROM HERE DOWN ###
 
 CODON_LEN = 3
-#START_CODON = "ATG"
-#STOP_CODONS = ["TAA", "TAG", "TGA"]
-
-start_pattern = re.compile("ATG")
-stop_pattern  = re.compile("(TAA)|(TAG)|(TGA)")
+orf_pattern = re.compile("^(?:.{3})*?(?P<orf>ATG(?:(?:.{3})*?(?=TAA|TAG|TGA)|.*$))")
 
 def find_all_ORFs(dna):
     """ Finds non-nested open reading frames in given DNA
@@ -31,101 +27,22 @@ def find_all_ORFs(dna):
     ['ATGTAT', 'ATGTAT']
     >>> find_all_ORFs("ATGA")
     ['ATGA']
+    >>> find_all_ORFs("AATG")
+    []
     """
 
-    i = 0
     ORFs = []
-    done = False
-    while (not done):
-        start_index = find_start_codon(i, dna)
-        stop_index  = find_stop_codon(start_index + CODON_LEN, dna)
+    match = orf_pattern.search(dna)
 
-        if start_index != len(dna):
-                ORF = dna[start_index:stop_index]
-                ORFs.append(ORF)
-        else:
-            done = True
+    while match:
+        dict = match.groupdict()
+        orf = dict.get("orf")
+        ORFs.append(orf)
 
-        i = stop_index + 1
+        dna = dna[match.end():] # remove matched part of dna
+        match = orf_pattern.search(dna)
 
     return ORFs
-
-def find_pattern(i, dna, pattern):
-
-    match = pattern.search(dna, i)
-
-    while True:
-
-        if match:
-            match_start = match.start()
-            if match_start % CODON_LEN != 0:
-                match = pattern.search(dna, match_start + 1)
-            else:
-                return match_start
-        else:
-            return len(dna)
-
-
-def find_start_codon(i, dna):
-    """ Finds the index of the first start
-    codon after index i that is a multiple
-    of three. If there is not one, 
-    then we return the length of dna.
-    >>> find_start_codon(0, "ATG")
-    0
-    >>> find_start_codon(1, "ATG")
-    3
-    >>> find_start_codon(0, "AATG")
-    4
-    >>> find_start_codon(0, "TAGATG")
-    3
-    """
-
-    return find_pattern(i, dna, start_pattern)
-
-def find_stop_codon(i, dna):
-    """ Finds the index of the first stop
-    codon after index i that is a multiple
-    of three. If there is not one,
-    then we return the length of dna.
-    >>> find_stop_codon(0, "TAG")
-    0
-    >>> find_stop_codon(1, "TAG")
-    3
-    >>> find_stop_codon(0, "TTAA")
-    4
-    >>> find_stop_codon(3, "ATGTAG")
-    3
-    """
-
-    return find_pattern(i, dna, stop_pattern)
-
-def any_codons_remaining(i, dna):
-    """ Determines if there are any full codons remaining
-    >>> any_codons_remaining(0, "ATGGATTA")
-    True
-    >>> any_codons_remaining(3, "ATGGAT")
-    True
-    >>> any_codons_remaining(2, "ATGA")
-    False
-    """
-
-    dna_len = len(dna)
-    return i + CODON_LEN <= dna_len
-
-def get_codon(i, dna):
-    """ Retrives codon starting at index i
-    >>> get_codon(0, "ATG")
-    'ATG'
-    >>> get_codon(3, "ATGTAT")
-    'TAT'
-    >>> get_codon(4, "AGTAT")
-    ''
-    """
-
-    if any_codons_remaining(i, dna):
-        return dna[i:i+CODON_LEN]
-    return ""
 
 def reverse_complement_dna(dna):
     """ Returns the reversed complement of the dna 
@@ -200,8 +117,6 @@ def complement_nucleotide(nucleotide):
         return 'G'
     else:
         return '?'
-
-
 
 def find_all_ORFs_both_strands(dna):
     """ Finds all non-nested open reading frames in the given DNA sequence on both
