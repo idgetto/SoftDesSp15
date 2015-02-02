@@ -15,7 +15,31 @@ import re
 ### YOU WILL START YOUR IMPLEMENTATION FROM HERE DOWN ###
 
 CODON_LEN = 3
+
 orf_pattern = re.compile("^(?:.{3})*?(?P<orf>ATG(?:(?:.{3})*?(?=TAA|TAG|TGA)|.*$))")
+
+"""
+                         %%%%%%%%%%%%%%%%%%%%%%%
+                         %% REGEX EXPLANATION %%
+                         %%%%%%%%%%%%%%%%%%%%%%%
+
+
+    ^
+        (?:.{3})*?                      # multiple of any three characters
+        (?P<orf>                        # make a group called orf
+            ATG                         # contains the start codon: ATG
+            (?:
+                (?:.{3})*?              # multiple of any three characters
+                    (?=TAA|TAG|TGA)     # there should be a stop codon after
+                    OR                  # OR
+                    .*                  # anything; this happens when there is no stop codon
+            )
+        )
+    $
+
+
+
+"""
 
 def find_all_ORFs(dna):
     """ Finds non-nested open reading frames in given DNA
