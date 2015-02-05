@@ -19,27 +19,49 @@ CODON_LEN = 3
 orf_pattern = re.compile("^(?:.{3})*?(?P<orf>ATG(?:(?:.{3})*?(?=TAA|TAG|TGA)|.*$))")
 
 """
-                         %%%%%%%%%%%%%%%%%%%%%%%
-                         %% REGEX EXPLANATION %%
-                         %%%%%%%%%%%%%%%%%%%%%%%
+                         =======================
+                         == REGEX EXPLANATION ==
+                         =======================
 
 
-    ^
-        (?:.{3})*?                      # multiple of any three characters
-        (?P<orf>                        # make a group called orf
-            ATG                         # contains the start codon: ATG
+    ^                                       # beginning of string
+        (?:.{3})*?                          # multiple of any three characters
+        (?P<orf>                            # make a group called "orf"
+            ATG                             # contains the start codon: ATG
             (?:
-                (?:.{3})*?              # multiple of any three characters
-                    (?=TAA|TAG|TGA)     # there should be a stop codon after
-                    OR                  # OR
-                    .*                  # anything; this happens when there is no stop codon
+                (?:.{3})*?                  # multiple of any three characters
+                        (?=TAA|TAG|TGA)     # there should be a stop codon after
+                    |                       # or
+                        .*                  # anything; this happens when there is no stop codon
             )
         )
-    $
+    $                                       # end of string
 
 
 
 """
+
+codon_protein_dict = { 
+                        "TTT": "F", "TTC": "F", "TTA": "L", "TTG": "L",
+                        "TCT": "S", "TCC": "S", "TCA": "S", "TCG": "S",
+                        "TAT": "T", "TAC": "T",
+                        "TGT": "C", "TGC": "C", "TGG": "W",
+
+                        "CTT": "L", "CTC": "L", "CTA": "L", "CTG": "L",
+                        "CCT": "P", "CCC": "P", "CCA": "P", "CCG": "P",
+                        "CAT": "H", "CAC": "H", "CAA": "Q", "CAG": "Q",
+                        "CGT": "R", "CGC": "R", "CGA": "R", "CGG": "R", 
+
+                        "ATT": "I", "ATC": "I", "ATA": "I", "ATG": "M",
+                        "ACT": "T", "ACC": "T", "ACA": "T", "ACG": "T",
+                        "AAT": "N", "AAC": "N", "AAA": "K", "AAG": "K",
+                        "AGT": "S", "AGC": "S", "AGA": "R", "AGG": "R", 
+
+                        "GTT": "V", "GTC": "V", "GTA": "V", "GTG": "V",
+                        "GCT": "A", "GCC": "A", "GCA": "A", "GCG": "A",
+                        "GAT": "D", "GAC": "D", "GAA": "E", "GAG": "E",
+                        "GGT": "G", "GGC": "G", "GGA": "G", "GGG": "G" 
+                     }
 
 def find_all_ORFs(dna):
     """ Finds non-nested open reading frames in given DNA
@@ -185,6 +207,19 @@ def longest_ORF_noncoding(dna, num_trials):
     # TODO: implement this
     pass
 
+def shuffle(str):
+    list = random.sample(str, len(str))
+    return join_list(list)
+
+def convert_to_proteins(list):
+    """ Convert each ORF to its protein sequence
+    >>> convert_to_proteins(["ATG", "ATGTAT", "ATGGCC"])
+    ['M', 'MT', 'MA']
+    """
+
+    return map(coding_strand_to_AA, list)
+
+
 def coding_strand_to_AA(dna):
     """ Computes the Protein encoded by a sequence of DNA.  This function
         does not check for start and stop codons (it assumes that the input
@@ -199,8 +234,65 @@ def coding_strand_to_AA(dna):
         >>> coding_strand_to_AA("ATGCCCGCTTT")
         'MPA'
     """
-    # TODO: implement this
-    pass
+
+    stripped = strip_extra(dna)
+    codon_list = split_codons(stripped)
+    protein_list = map(codon_to_protein, codon_list)
+    proteins = join_list(protein_list)
+    return proteins
+
+def split_codons(dna):
+    """ Splits a dna strand into separate codons
+    >>> split_codons("ATG")
+    ['ATG']
+    >>> split_codons("ATGTAA")
+    ['ATG', 'TAA']
+    >>> split_codons("")
+    []
+    """
+
+    return split_codons_helper(dna, [])
+
+def split_codons_helper(dna, acc):
+    if not dna:
+        return acc
+    acc.append(dna[:3])
+    return split_codons_helper(dna[3:], acc)
+
+
+def codon_to_protein(codon):
+    """ Convert codon to the corrosponding protein, 
+    if there is no corrosponding protein, then return '?'
+    >>> codon_to_protein("TTT")
+    'F'
+    >>> codon_to_protein("ATC")
+    'I'
+    >>> codon_to_protein("")
+    '?'
+    """
+
+    protein = codon_protein_dict.get(codon)
+    if (protein):
+        return protein
+    return "?" 
+
+def strip_extra(dna):
+    """ Strips any incomplete codons 
+        off the end of a dna strand
+
+        >>> strip_extra("ATG")
+        'ATG'
+        >>> strip_extra("ATGAA")
+        'ATG'
+        >>> strip_extra("ATGTAA")
+        'ATGTAA'
+        >>> strip_extra("ATGCCCGCTTT")
+        'ATGCCCGCT'
+        """
+
+    str_len = len(dna)
+    extra = str_len % 3
+    return dna[:str_len - extra]
 
 def gene_finder(dna, threshold):
     """ Returns the amino acid sequences coded by all genes that have an ORF
@@ -212,9 +304,22 @@ def gene_finder(dna, threshold):
         returns: a list of all amino acid sequences whose ORFs meet the minimum
                  length specified.
     """
-    # TODO: implement this
-    pass
 
+    ORFs = find_all_ORFs_both_stands(dna)
+    long_ORFs = keep_if_long(threshold, list)
+    return convert_to_proteins(list)
+
+def keep_if_long(length, list):
+    """ Keeps the elements of a list that are greater or equal to the given length
+    >>> keep_if_long(0, ["cat", "dog", "moose"])
+    ['cat', 'dog', 'moose']
+    >>> keep_if_long(4, ["cat", "dog", "moose"])
+    ['moose']
+    >>> keep_if_long(6, ["cat", "dog", "moose"])
+    []
+    """
+
+    return filter(lambda item: len(item) >= length, list)
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
