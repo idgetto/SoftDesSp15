@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Feb  2 11:24:42 2014
+ Created on Sun Feb  2 11:24:42 2014
 
 @author: Isaac Getto
 
@@ -8,15 +8,19 @@ Created on Sun Feb  2 11:24:42 2014
 
 # you may find it useful to import these variables (although you are not required to use them)
 from amino_acids_less_structure import aa, codons
+from amino_acids import aa_table
 import random
 from load import load_seq
 import re
+from itertools import imap
+from itertools import ifilter
+from itertools import repeat
 
 ### YOU WILL START YOUR IMPLEMENTATION FROM HERE DOWN ###
 
 CODON_LEN = 3
-
-orf_pattern = re.compile("^(?:.{3})*?(?P<orf>ATG(?:(?:.{3})*?(?=TAA|TAG|TGA)|.*$))")
+ORF_REGEX = "^(?:.{3})*?(?P<orf>ATG(?:(?:.{3})*?(?=TAA|TAG|TGA)|.*$))"
+orf_pattern = re.compile(ORF_REGEX)
 
 """
                          =======================
@@ -41,27 +45,16 @@ orf_pattern = re.compile("^(?:.{3})*?(?P<orf>ATG(?:(?:.{3})*?(?=TAA|TAG|TGA)|.*$
 
 """
 
-codon_protein_dict = { 
-                        "TTT": "F", "TTC": "F", "TTA": "L", "TTG": "L",
-                        "TCT": "S", "TCC": "S", "TCA": "S", "TCG": "S",
-                        "TAT": "T", "TAC": "T",
-                        "TGT": "C", "TGC": "C", "TGG": "W",
-
-                        "CTT": "L", "CTC": "L", "CTA": "L", "CTG": "L",
-                        "CCT": "P", "CCC": "P", "CCA": "P", "CCG": "P",
-                        "CAT": "H", "CAC": "H", "CAA": "Q", "CAG": "Q",
-                        "CGT": "R", "CGC": "R", "CGA": "R", "CGG": "R", 
-
-                        "ATT": "I", "ATC": "I", "ATA": "I", "ATG": "M",
-                        "ACT": "T", "ACC": "T", "ACA": "T", "ACG": "T",
-                        "AAT": "N", "AAC": "N", "AAA": "K", "AAG": "K",
-                        "AGT": "S", "AGC": "S", "AGA": "R", "AGG": "R", 
-
-                        "GTT": "V", "GTC": "V", "GTA": "V", "GTG": "V",
-                        "GCT": "A", "GCC": "A", "GCA": "A", "GCG": "A",
-                        "GAT": "D", "GAC": "D", "GAA": "E", "GAG": "E",
-                        "GGT": "G", "GGC": "G", "GGA": "G", "GGG": "G" 
-                     }
+def generic_sum(L):
+    """ Reduces a list into a sigle entity
+    >>> generic_sum(['a', 'b', 'c'])
+    'abc'
+    >>> generic_sum([1, 2, 3])
+    6
+    >>> generic_sum([(1, 2), (3, 4), (5, 6)])
+    (1, 2, 3, 4, 5, 6)
+    """
+    return reduce(lambda acc, item: acc + item, L)
 
 def find_all_ORFs(dna):
     """ Finds all non-nested open reading frames in given DNA
@@ -69,8 +62,8 @@ def find_all_ORFs(dna):
     ['ATGCATGAATGTAG', 'ATGAATGTAG', 'ATG']
     """
 
-    ORFs = map(find_all_ORFs_one_frame, [dna, dna[1:], dna[2:]])
-    return join_list(ORFs)
+    ORFs = imap(find_all_ORFs_one_frame, [dna, dna[1:], dna[2:]])
+    return generic_sum(ORFs)
 
 def find_all_ORFs_one_frame(dna):
     """ Finds non-nested open reading frames in given DNA
@@ -132,21 +125,9 @@ def complement_dna(dna):
     'CTAATGT'
     """
 
-    list = map(complement_nucleotide, dna)
-    str = join_list(list)
+    list = imap(complement_nucleotide, dna)
+    str = generic_sum(list)
     return str
-
-def join_list(list):
-    """ Reduces a list into a sigle entity
-    >>> join_list(['a', 'b', 'c'])
-    'abc'
-    >>> join_list([1, 2, 3])
-    6
-    >>> join_list([(1, 2), (3, 4), (5, 6)])
-    (1, 2, 3, 4, 5, 6)
-    """
-
-    return reduce(lambda acc, el: acc + el, list)
 
 def complement_nucleotide(nucleotide):
     """ Finds the complement nucloetide
@@ -202,7 +183,8 @@ def longest_in_list(list):
     (1, 2, 3, 4, 5)
     """
 
-    return max(list, key = lambda item: len(item))
+    if list:
+        return max(list, key = len)
 
 def longest_ORF_noncoding(dna, num_trials):
     """ Computes the maximum length of the longest ORF over num_trials shuffles
@@ -212,24 +194,23 @@ def longest_ORF_noncoding(dna, num_trials):
         num_trials: the number of random shuffles
         returns: the maximum length longest ORF """
 
-    dnas         = map(lambda _: dna, xrange(0, num_trials))
-    shuffled_dna = map(shuffle, dnas)
-    longest_ORFs = map(longest_ORF, shuffled_dna)
+    dnas         = repeat(dna, num_trials);
+    shuffled_dna = imap(shuffle, dnas)
+    longest_ORFs = imap(longest_ORF, shuffled_dna)
     max_len      = len(longest_in_list(longest_ORFs))
     return max_len
 
 def shuffle(str):
     list = random.sample(str, len(str))
-    return join_list(list)
+    return generic_sum(list)
 
 def convert_to_proteins(L):
     """ Convert each ORF to its protein sequence
-    >>> convert_to_proteins(["ATG", "ATGTAT", "ATGGCC"])
-    ['M', 'MT', 'MA']
+    >>> list(convert_to_proteins(["ATG", "ATGTAT", "ATGGCC"]))
+    ['M', 'MY', 'MA']
     """
 
-    return map(coding_strand_to_AA, L)
-
+    return imap(coding_strand_to_AA, L)
 
 def coding_strand_to_AA(dna):
     """ Computes the Protein encoded by a sequence of DNA.  This function
@@ -246,10 +227,10 @@ def coding_strand_to_AA(dna):
         'MPA'
     """
 
-    stripped = strip_extra(dna)
-    codon_list = split_codons(stripped)
-    protein_list = map(codon_to_protein, codon_list)
-    proteins = join_list(protein_list)
+    stripped     = strip_extra(dna)
+    codon_list   = split_codons(stripped)
+    protein_list = imap(codon_to_protein, codon_list)
+    proteins     = generic_sum(protein_list)
     return proteins
 
 def split_codons(dna):
@@ -282,7 +263,7 @@ def codon_to_protein(codon):
     '?'
     """
 
-    protein = codon_protein_dict.get(codon)
+    protein = aa_table.get(codon)
     if (protein):
         return protein
     return "?" 
@@ -322,15 +303,16 @@ def gene_finder(dna, threshold):
 
 def keep_if_long(length, list):
     """ Keeps the elements of a list that are greater or equal to the given length
-    >>> keep_if_long(0, ["cat", "dog", "moose"])
+    >>> list(keep_if_long(0, ["cat", "dog", "moose"]))
     ['cat', 'dog', 'moose']
-    >>> keep_if_long(4, ["cat", "dog", "moose"])
+    >>> list(keep_if_long(4, ["cat", "dog", "moose"]))
     ['moose']
-    >>> keep_if_long(6, ["cat", "dog", "moose"])
+    >>> list(keep_if_long(6, ["cat", "dog", "moose"]))
     []
     """
 
-    return filter(lambda item: len(item) >= length, list)
+    return ifilter(lambda item: len(item) >= length, list)
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
@@ -340,6 +322,4 @@ if __name__ == "__main__":
 
     threshold = 700
     genes = gene_finder(dna, threshold)
-    print genes
-    print len(genes)
-
+    print list(genes)
