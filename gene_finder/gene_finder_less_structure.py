@@ -64,22 +64,30 @@ codon_protein_dict = {
                      }
 
 def find_all_ORFs(dna):
+    """ Finds all non-nested open reading frames in given DNA
+    >>> find_all_ORFs("ATGCATGAATGTAG")
+    ['ATGCATGAATGTAG', 'ATGAATGTAG', 'ATG']
+    """
+
+    ORFs = map(find_all_ORFs_one_frame, [dna, dna[1:], dna[2:]])
+    return join_list(ORFs)
+
+def find_all_ORFs_one_frame(dna):
     """ Finds non-nested open reading frames in given DNA
-    >>> find_all_ORFs("ATGAATTGA")
+    >>> find_all_ORFs_one_frame("ATGAATTGA")
     ['ATGAAT']
-    >>> find_all_ORFs("ATGTTGATGTAA")
+    >>> find_all_ORFs_one_frame("ATGTTGATGTAA")
     ['ATGTTGATG']
-    >>> find_all_ORFs("ATGTATTGAAAAATGTATTAA")
+    >>> find_all_ORFs_one_frame("ATGTATTGAAAAATGTATTAA")
     ['ATGTAT', 'ATGTAT']
-    >>> find_all_ORFs("ATGA")
+    >>> find_all_ORFs_one_frame("ATGA")
     ['ATGA']
-    >>> find_all_ORFs("AATG")
+    >>> find_all_ORFs_one_frame("AATG")
     []
     """
 
     ORFs = []
     match = orf_pattern.search(dna)
-
     while match:
         dict = match.groupdict()
         orf = dict.get("orf")
@@ -183,7 +191,6 @@ def find_all_ORFs_both_strands(dna):
     return orfs
 
 def longest_ORF(dna):
-    
     orfs = find_all_ORFs_both_strands(dna)
     return longest_in_list(orfs)
 
@@ -204,20 +211,24 @@ def longest_ORF_noncoding(dna, num_trials):
         dna: a DNA sequence
         num_trials: the number of random shuffles
         returns: the maximum length longest ORF """
-    # TODO: implement this
-    pass
+
+    dnas         = map(lambda _: dna, xrange(0, num_trials))
+    shuffled_dna = map(shuffle, dnas)
+    longest_ORFs = map(longest_ORF, shuffled_dna)
+    max_len      = len(longest_in_list(longest_ORFs))
+    return max_len
 
 def shuffle(str):
     list = random.sample(str, len(str))
     return join_list(list)
 
-def convert_to_proteins(list):
+def convert_to_proteins(L):
     """ Convert each ORF to its protein sequence
     >>> convert_to_proteins(["ATG", "ATGTAT", "ATGGCC"])
     ['M', 'MT', 'MA']
     """
 
-    return map(coding_strand_to_AA, list)
+    return map(coding_strand_to_AA, L)
 
 
 def coding_strand_to_AA(dna):
@@ -305,9 +316,9 @@ def gene_finder(dna, threshold):
                  length specified.
     """
 
-    ORFs = find_all_ORFs_both_stands(dna)
-    long_ORFs = keep_if_long(threshold, list)
-    return convert_to_proteins(list)
+    ORFs = find_all_ORFs_both_strands(dna)
+    long_ORFs = keep_if_long(threshold, ORFs)
+    return convert_to_proteins(long_ORFs)
 
 def keep_if_long(length, list):
     """ Keeps the elements of a list that are greater or equal to the given length
@@ -323,3 +334,12 @@ def keep_if_long(length, list):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+    from load import load_seq
+    dna = load_seq("./data/X73525.fa")
+
+    threshold = 700
+    genes = gene_finder(dna, threshold)
+    print genes
+    print len(genes)
+
