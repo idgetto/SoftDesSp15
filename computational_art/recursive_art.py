@@ -60,9 +60,15 @@ def remap_interval(val, input_interval_start, input_interval_end, output_interva
         >>> remap_interval(5, 4, 6, 1, 2)
         1.5
     """
-    # TODO: implement this
-    pass
+    input_range = input_interval_end - input_interval_start
+    rel_input = val - input_interval_start
+    percent = rel_input / float(input_range)
 
+    output_range = output_interval_end - output_interval_start
+    rel_output = percent * output_range;
+    output = rel_output + output_interval_start;
+
+    return output;
 
 def color_map(val):
     """ Maps input value between -1 and 1 to an integer 0-255, suitable for
