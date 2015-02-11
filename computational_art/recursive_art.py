@@ -2,7 +2,7 @@
 
 import random
 from PIL import Image
-
+import math
 
 def build_random_function(min_depth, max_depth):
     """ Builds a random function of depth at least min_depth and depth
@@ -33,9 +33,14 @@ def evaluate_random_function(f, x, y):
         >>> evaluate_random_function(["y"],0.1,0.02)
         0.02
     """
-    # TODO: implement this
-    pass
+    func_name = f[0]
 
+    try:
+        function = func_table[func_name]
+        params = f[1:]
+        return function(params, x, y);
+    except KeyError:
+        raise Exception("no such function:", func_name)
 
 def remap_interval(val, input_interval_start, input_interval_end, output_interval_start, output_interval_end):
     """ Given an input value in the interval [input_interval_start,
@@ -118,9 +123,9 @@ def generate_art(filename, x_size=350, y_size=350):
         x_size, y_size: optional args to set image dimensions (default: 350)
     """
     # Functions for red, green, and blue channels - where the magic happens!
-    red_function = ["x"]
-    green_function = ["y"]
-    blue_function = ["x"]
+    red_function = ["prod", ["x"], ["x"]]
+    green_function = ["sin_pi", ["y"]]
+    blue_function = ["cos_pi", ["x"]]
 
     # Create image and loop over all pixels
     im = Image.new("RGB", (x_size, y_size))
@@ -137,6 +142,38 @@ def generate_art(filename, x_size=350, y_size=350):
 
     im.save(filename)
 
+def prod(L, x, y):
+    a = evaluate_random_function(L[0], x, y)
+    b = evaluate_random_function(L[1], x, y)
+    return a * b
+
+def avg(L, x, y):
+    a = evaluate_random_function(L[0], x, y)
+    b = evaluate_random_function(L[1], x, y)
+    return 0.5 * (a + b)
+
+def cos_pi(L, x, y):
+    a = evaluate_random_function(L[0], x, y)
+    return math.cos(math.pi * a)
+
+def sin_pi(L, x, y):
+    a = evaluate_random_function(L[0], x, y)
+    return math.sin(math.pi * a)
+
+def x(L, x, y):
+    return x
+
+def y(L, x, y):
+    return y
+
+func_table = {
+    "prod"   : prod,
+    "avg"    : avg,
+    "cos_pi" : cos_pi,
+    "sin_pi" : sin_pi,
+    "x"      : x,
+    "y"      : y
+}
 
 if __name__ == '__main__':
     import doctest
@@ -145,7 +182,7 @@ if __name__ == '__main__':
     # Create some computational art!
     # TODO: Un-comment the generate_art function call after you
     #       implement remap_interval and evaluate_random_function
-    #generate_art("myart.png")
+    generate_art("myart.png")
 
     # Test that PIL is installed correctly
     # TODO: Comment or remove this function call after testing PIL install
