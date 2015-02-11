@@ -286,15 +286,11 @@ def strip_extra(dna):
     extra = str_len % 3
     return dna[:str_len - extra]
 
-def gene_finder(dna, threshold):
-    """ Returns the amino acid sequences coded by all genes that have an ORF
-        larger than the specified threshold.
+def gene_finder(dna):
+    """ Returns the amino acid sequences that are likely coded by the specified dna
         
         dna: a DNA sequence
-        threshold: the minimum length of the ORF for it to be considered a valid
-                   gene.
-        returns: a list of all amino acid sequences whose ORFs meet the minimum
-                 length specified.
+        returns: a list of all amino acid sequences coded by the sequence dna.
     """
 
     ORFs = find_all_ORFs_both_strands(dna)
