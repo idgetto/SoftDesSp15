@@ -15,9 +15,30 @@ def build_random_function(min_depth, max_depth):
                  (see assignment writeup for details on the representation of
                  these functions)
     """
-    # TODO: implement this
-    pass
+    random_func = []
 
+    func = get_some_func(min_depth, max_depth);
+    num_params = func_params_table[func]
+
+    random_func.append(func)
+
+    # add the appropriate number of parameteres
+    for i in range(num_params):
+        param = build_random_function(min_depth - 1, max_depth - 1)
+        random_func.append(param)
+
+    return random_func
+
+def get_some_func(min_depth, max_depth):
+    # func should have no params
+    if max_depth == 1:
+        func = random.choice(no_param_func_names)
+    elif min_depth <= 1:
+        func = random.choice(all_func_names)
+    else:
+        func = random.choice(param_func_names)
+
+    return func
 
 def evaluate_random_function(f, x, y):
     """ Evaluate the random function f with inputs x,y
@@ -32,6 +53,10 @@ def evaluate_random_function(f, x, y):
         -0.5
         >>> evaluate_random_function(["y"],0.1,0.02)
         0.02
+        >>> evaluate_random_function(["prod", ["x"], ["y"]], 2, 5)
+        10
+        >>> evaluate_random_function(["avg", ["prod", ["x"], ["cos_pi", ["y"]]], ["avg", ["sin_pi", ["y"]], ["x"]]], 2, 3.14)
+        -0.5112718753572876
     """
     func_name = f[0]
 
@@ -123,10 +148,13 @@ def generate_art(filename, x_size=350, y_size=350):
         x_size, y_size: optional args to set image dimensions (default: 350)
     """
     # Functions for red, green, and blue channels - where the magic happens!
-    red_function = ["prod", ["x"], ["x"]]
-    green_function = ["sin_pi", ["y"]]
-    blue_function = ["cos_pi", ["x"]]
+    red_function = build_random_function(3, 5)
+    green_function = build_random_function(3, 5)
+    blue_function = build_random_function(3, 5)
 
+    print red_function
+    print blue_function
+    print green_function
     # Create image and loop over all pixels
     im = Image.new("RGB", (x_size, y_size))
     pixels = im.load()
@@ -166,14 +194,40 @@ def x(L, x, y):
 def y(L, x, y):
     return y
 
-func_table = {
-    "prod"   : prod,
-    "avg"    : avg,
-    "cos_pi" : cos_pi,
-    "sin_pi" : sin_pi,
-    "x"      : x,
-    "y"      : y
-}
+no_param_func_names = [
+    "x",
+    "y"
+]
+
+param_func_names = [
+    "cos_pi",
+    "sin_pi",
+    "prod",
+    "avg"
+]
+
+all_func_names = no_param_func_names + param_func_names
+
+func_params = [
+    0,
+    0,
+    1,
+    1,
+    2,
+    2
+]
+
+funcs = [
+    x,
+    y,
+    cos_pi,
+    sin_pi,
+    prod,
+    avg
+]
+
+func_table = dict(zip(all_func_names, funcs))
+func_params_table = dict(zip(all_func_names, func_params))
 
 if __name__ == '__main__':
     import doctest
@@ -182,7 +236,7 @@ if __name__ == '__main__':
     # Create some computational art!
     # TODO: Un-comment the generate_art function call after you
     #       implement remap_interval and evaluate_random_function
-    generate_art("myart.png")
+    generate_art("myart.png", 2560, 1440)
 
     # Test that PIL is installed correctly
     # TODO: Comment or remove this function call after testing PIL install
