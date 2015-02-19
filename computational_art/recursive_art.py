@@ -3,6 +3,10 @@
 import random
 from PIL import Image
 import math
+import threading
+import time
+
+MIN_VALUE = 1e-10
 
 def build_random_function(min_depth, max_depth):
     """ Builds a random function of depth at least min_depth and depth
@@ -148,9 +152,18 @@ def generate_art(filename, x_size=350, y_size=350):
         x_size, y_size: optional args to set image dimensions (default: 350)
     """
     # Functions for red, green, and blue channels - where the magic happens!
-    red_function = build_random_function(3, 5)
+    red_function = build_random_function(6, 7)
     green_function = build_random_function(3, 5)
-    blue_function = build_random_function(3, 5)
+    blue_function = build_random_function(5, 6)
+
+    func_file = "func-" + filename + ".txt"
+    f = open(func_file, "w")
+    f.write(str(red_function))
+    f.write("\n")
+    f.write(str(green_function))
+    f.write("\n")
+    f.write(str(blue_function))
+    f.close()
 
     print red_function
     print blue_function
@@ -158,17 +171,38 @@ def generate_art(filename, x_size=350, y_size=350):
     # Create image and loop over all pixels
     im = Image.new("RGB", (x_size, y_size))
     pixels = im.load()
-    for i in range(x_size):
-        for j in range(y_size):
+
+    threads = []
+    num_threads = 4
+    block_size = x_size / num_threads
+
+    for i in range(num_threads):
+        x_range = range(i * block_size, (i + 1) * block_size)
+        y_range = range(y_size)
+        thread = threading.Thread(target=draw_block, args=(pixels, x_range, x_size, y_range, y_size, red_function, blue_function, green_function))
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    im.save(filename)
+
+def draw_block(pixels, x_range, x_size, y_range, y_size, red_func, blue_func, green_func):
+    for i in x_range:
+        rel_i = i - x_range[0]
+        dist = len(x_range)
+        print 100 * rel_i / float(dist)
+        for j in y_range:
             x = remap_interval(i, 0, x_size, -1, 1)
             y = remap_interval(j, 0, y_size, -1, 1)
             pixels[i, j] = (
-                    color_map(evaluate_random_function(red_function, x, y)),
-                    color_map(evaluate_random_function(green_function, x, y)),
-                    color_map(evaluate_random_function(blue_function, x, y))
+                    color_map(evaluate_random_function(red_func, x, y)),
+                    color_map(evaluate_random_function(green_func, x, y)),
+                    color_map(evaluate_random_function(blue_func, x, y))
                     )
 
-    im.save(filename)
+
 
 def prod(L, x, y):
     a = evaluate_random_function(L[0], x, y)
@@ -180,6 +214,16 @@ def avg(L, x, y):
     b = evaluate_random_function(L[1], x, y)
     return 0.5 * (a + b)
 
+def mod(L, x, y):
+    a = evaluate_random_function(L[0], x, y)
+    b = evaluate_random_function(L[1], x, y)
+    b = max(b, MIN_VALUE)
+    try:
+        return math.fmod(a, b)
+    except ValueError:
+        print a, b
+        raise
+
 def cos_pi(L, x, y):
     a = evaluate_random_function(L[0], x, y)
     return math.cos(math.pi * a)
@@ -188,13 +232,27 @@ def sin_pi(L, x, y):
     a = evaluate_random_function(L[0], x, y)
     return math.sin(math.pi * a)
 
+def frexp(L, x, y):
+    a = evaluate_random_function(L[0], x, y)
+    return math.frexp(a)[0]
+
+def inter(L, x, y):
+    return random.choice([-1, 0, 1])
+
+def x_over_y(L, x, y):
+    return float(x) / (float(y) + 0.0001)
+
 def x(L, x, y):
     return x
 
 def y(L, x, y):
     return y
 
+    
+
 no_param_func_names = [
+    "inter",
+    "x_over_y",
     "x",
     "y"
 ]
@@ -202,8 +260,10 @@ no_param_func_names = [
 param_func_names = [
     "cos_pi",
     "sin_pi",
+    "frexp",
     "prod",
-    "avg"
+    "avg",
+    "mod"
 ]
 
 all_func_names = no_param_func_names + param_func_names
@@ -211,19 +271,27 @@ all_func_names = no_param_func_names + param_func_names
 func_params = [
     0,
     0,
+    0,
+    0,
     1,
     1,
+    1,
+    2,
     2,
     2
 ]
 
 funcs = [
+    inter,
+    x_over_y,
     x,
     y,
     cos_pi,
     sin_pi,
+    frexp,
     prod,
-    avg
+    avg,
+    mod
 ]
 
 func_table = dict(zip(all_func_names, funcs))
@@ -236,8 +304,9 @@ if __name__ == '__main__':
     # Create some computational art!
     # TODO: Un-comment the generate_art function call after you
     #       implement remap_interval and evaluate_random_function
-    generate_art("myart.png", 2560, 1440)
+    file_name = "cgi-" + time.strftime("%Y-%m-%d-%H-%M-%S") + ".png"
+    generate_art(file_name, 2560, 1440)
 
     # Test that PIL is installed correctly
     # TODO: Comment or remove this function call after testing PIL install
-    test_image("noise.png")
+    #test_image("noise.png")
