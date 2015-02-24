@@ -44,6 +44,7 @@ orf_pattern = re.compile(ORF_REGEX)
 
 
 """
+#Nice explaination here, documentation is always a good thing
 
 def generic_sum(L):
     """ Reduces a list into a sigle entity
@@ -151,7 +152,7 @@ def complement_nucleotide(nucleotide):
     elif nucleotide == 'C':
         return 'G'
     else:
-        return '?'
+        return 'Nucleotide not found' #Elaborate this error, will make debugging way easier in the future
 
 def find_all_ORFs_both_strands(dna):
     """ Finds all non-nested open reading frames in the given DNA sequence on both
@@ -266,7 +267,7 @@ def codon_to_protein(codon):
     protein = aa_table.get(codon)
     if (protein):
         return protein
-    return "?" 
+    return "?" #Same as above
 
 def strip_extra(dna):
     """ Strips any incomplete codons 
@@ -286,7 +287,7 @@ def strip_extra(dna):
     extra = str_len % 3
     return dna[:str_len - extra]
 
-def gene_finder(dna):
+def gene_finder(dna, threshold): #forgot to pass in threshold here
     """ Returns the amino acid sequences that are likely coded by the specified dna
         
         dna: a DNA sequence
@@ -316,6 +317,6 @@ if __name__ == "__main__":
     from load import load_seq
     dna = load_seq("./data/X73525.fa")
 
-    threshold = 700
+    threshold = longest_ORF_noncoding(dna, 1500)  #This threshold should be be returned from longest_orf_noncoding
     genes = gene_finder(dna, threshold)
     print list(genes)
