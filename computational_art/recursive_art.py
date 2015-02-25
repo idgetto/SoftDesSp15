@@ -1,4 +1,4 @@
-""" TODO: Put your header comment here """
+""" TODO: Put your header comment here """ #Where's header comment?
 
 import random
 from PIL import Image
@@ -26,7 +26,7 @@ def build_random_function(min_depth, max_depth):
 
     random_func.append(func)
 
-    # add the appropriate number of parameteres
+    # add the appropriate number of parameteres  <--Commenting is good, 
     for i in range(num_params):
         param = build_random_function(min_depth - 1, max_depth - 1)
         random_func.append(param)
@@ -68,7 +68,7 @@ def evaluate_random_function(f, x, y):
         function = func_table[func_name]
         params = f[1:]
         return function(params, x, y);
-    except KeyError:
+    except KeyError: #Nice error catching!
         raise Exception("no such function:", func_name)
 
 def remap_interval(val, input_interval_start, input_interval_end, output_interval_start, output_interval_end):
@@ -165,7 +165,7 @@ def generate_art(filename, x_size=350, y_size=350):
     f.write(str(blue_function))
     f.close()
 
-    print red_function
+    print red_function 
     print blue_function
     print green_function
     # Create image and loop over all pixels
@@ -183,7 +183,7 @@ def generate_art(filename, x_size=350, y_size=350):
         threads.append(thread)
         thread.start()
 
-    for thread in threads:
+    for thread in threads: #ooh, multithreading is cool
         thread.join()
 
     im.save(filename)
@@ -192,7 +192,7 @@ def draw_block(pixels, x_range, x_size, y_range, y_size, red_func, blue_func, gr
     for i in x_range:
         rel_i = i - x_range[0]
         dist = len(x_range)
-        print 100 * rel_i / float(dist)
+        print 100 * rel_i / float(dist) #Please, please don't print things in long looping scripts. It takes forever to run
         for j in y_range:
             x = remap_interval(i, 0, x_size, -1, 1)
             y = remap_interval(j, 0, y_size, -1, 1)
@@ -202,8 +202,7 @@ def draw_block(pixels, x_range, x_size, y_range, y_size, red_func, blue_func, gr
                     color_map(evaluate_random_function(blue_func, x, y))
                     )
 
-
-
+#This is a interesting expanded format, but your function is becoming a tad long and unwieldy
 def prod(L, x, y):
     a = evaluate_random_function(L[0], x, y)
     b = evaluate_random_function(L[1], x, y)
@@ -220,7 +219,7 @@ def mod(L, x, y):
     b = max(b, MIN_VALUE)
     try:
         return math.fmod(a, b)
-    except ValueError:
+    except ValueError: #Nice error catching!
         print a, b
         raise
 
@@ -240,7 +239,8 @@ def inter(L, x, y):
     return random.choice([-1, 0, 1])
 
 def x_over_y(L, x, y):
-    return float(x) / (float(y) + 0.0001)
+    #return float(x) / (float(y) + 0.0001)
+    return x./(y+0.0001) #works as well
 
 def x(L, x, y):
     return x
@@ -302,10 +302,11 @@ if __name__ == '__main__':
     doctest.testmod()
 
     # Create some computational art!
-    # TODO: Un-comment the generate_art function call after you
+    # TODO: Un-comment the generate_art function call after you  <--Delete code not useful to your final turn in
     #       implement remap_interval and evaluate_random_function
     file_name = "cgi-" + time.strftime("%Y-%m-%d-%H-%M-%S") + ".png"
-    generate_art(file_name, 2560, 1440)
+    generate_art(file_name, 2560, 1440) #Ok, neat, but in final turn in I'm running everyone's code and my computer
+                                        #runs forever on this. Please make sure final code is easy to run
 
     # Test that PIL is installed correctly
     # TODO: Comment or remove this function call after testing PIL install
