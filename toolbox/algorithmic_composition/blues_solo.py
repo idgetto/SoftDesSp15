@@ -30,13 +30,27 @@ solo = AudioStream(sampling_rate, 1)
 	See: http://en.wikipedia.org/wiki/Blues_scale """
 blues_scale = [25, 28, 30, 31, 32, 35, 37, 40, 42, 43, 44, 47, 49, 52, 54, 55, 56, 59, 61]
 beats_per_minute = 45				# Let's make a slow blues solo
+note_diffs = [-1, 0, 1]
+
+# set a starting note
+note1 = random.randint(0, len(blues_scale) - 1)
 
 # compose the solo
 for i in range(16):
-    note1 = random.choice(blues_scale)
-    note2 = random.choice(blues_scale)
-    add_note(solo, bass, note1, 1.1, beats_per_minute, 1.0)
-    add_note(solo, bass, note2, 0.9, beats_per_minute, 1.0)
+    # change the note by some value
+    note1_diff = random.choice(note_diffs)
+    note2_diff = random.choice(note_diffs)
+
+    note1 += note1_diff
+    note2 = note1 + note2_diff
+
+    # don't go out of bounds
+    note1 = note1 % len(blues_scale)
+    note2 = note2 % len(blues_scale)
+        
+    # add the note to the stream
+    add_note(solo, bass, blues_scale[note1], 1, beats_per_minute, 1.0)
+    add_note(solo, bass, blues_scale[note2], 1, beats_per_minute, 1.0)
 
 # create the backing track
 backing_track = AudioStream(sampling_rate, 1)
