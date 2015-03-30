@@ -31,10 +31,21 @@ solo = AudioStream(sampling_rate, 1)
 blues_scale = [25, 28, 30, 31, 32, 35, 37, 40, 42, 43, 44, 47, 49, 52, 54, 55, 56, 59, 61]
 beats_per_minute = 45				# Let's make a slow blues solo
 
-for i in range(4):
+# compose the solo
+for i in range(16):
     note1 = random.choice(blues_scale)
     note2 = random.choice(blues_scale)
     add_note(solo, bass, note1, 1.1, beats_per_minute, 1.0)
     add_note(solo, bass, note2, 0.9, beats_per_minute, 1.0)
 
-solo >> "blues_solo.wav"
+# create the backing track
+backing_track = AudioStream(sampling_rate, 1)
+Wavefile.read('backing.wav', backing_track)
+
+# mix the solo and backing track
+mixer = Mixer()
+mixer.add(2.25, 0, solo)
+mixer.add(0, 0, backing_track)
+
+# write the audio file
+mixer.getStream(500.0) >> "blues_solo.wav"
