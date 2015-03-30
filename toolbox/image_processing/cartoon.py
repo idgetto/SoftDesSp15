@@ -4,7 +4,7 @@ def draw_face(frame, x, y, w, h):
     draw_outline(frame, x, y, w, h)
     draw_eyes(frame, x, y, w, h)
     draw_nose(frame, x, y, w, h)
-    # draw_mouth(x, y, w, h)
+    draw_mouth(frame, x, y, w, h)
     # draw_hair(x, y, w, h)
 
 def draw_outline(frame, x, y, w, h):
@@ -33,3 +33,15 @@ def draw_nose(frame, x, y, w, h):
     cv2.line(frame, nose_top, nose_bot_left, color)
     cv2.line(frame, nose_top, nose_bot_right, color)
     cv2.line(frame, nose_bot_left, nose_bot_right, color)
+
+def draw_mouth(frame, x, y, w, h):
+    center = (x + w / 2, y + 4 * h / 5) 
+    width = w / 4
+    height = h / 10
+    angle = 0
+    startAngle = 0
+    endAngle = 180
+    color = (10, 100, 30)
+    thickness = 10
+
+    cv2.ellipse(frame, center, (width, height), angle, startAngle, endAngle, color, thickness)
