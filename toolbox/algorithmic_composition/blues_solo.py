@@ -32,7 +32,9 @@ blues_scale = [25, 28, 30, 31, 32, 35, 37, 40, 42, 43, 44, 47, 49, 52, 54, 55, 5
 beats_per_minute = 45				# Let's make a slow blues solo
 
 for i in range(4):
-    note = random.choice(blues_scale)
-    add_note(solo, bass, note, 1.0, beats_per_minute, 1.0)
+    note1 = random.choice(blues_scale)
+    note2 = random.choice(blues_scale)
+    add_note(solo, bass, note1, 1.1, beats_per_minute, 1.0)
+    add_note(solo, bass, note2, 0.9, beats_per_minute, 1.0)
 
 solo >> "blues_solo.wav"
